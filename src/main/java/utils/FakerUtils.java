@@ -2,15 +2,24 @@ package utils;
 
 import com.github.javafaker.Faker;
 
+import java.util.Random;
+
 public class FakerUtils {
 
+    private static final Faker faker = new Faker();
+    private static final int MAX_PHOTO_URLS = 10;
+    private static final Random random = new Random();
+
     public static String generateName() {
-        Faker faker = new Faker();
         return faker.name().firstName();
     }
 
     public static String[] generateUrls() {
-        Faker faker = new Faker();
-        return new String[]{faker.internet().url(), faker.internet().url(), faker.internet().url()};
+        int photoUrlsSize = random.nextInt(MAX_PHOTO_URLS) + 1;
+        String[] photoUrls = new String[photoUrlsSize];
+        for (int i = 0; i < photoUrls.length; i++) {
+            photoUrls[i] = faker.internet().url();
+        }
+        return photoUrls;
     }
 }

@@ -1,30 +1,35 @@
 import api.PetApi;
 import io.restassured.response.Response;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import pojo.Pet;
-import utils.FakerUtils;
-
+import static utils.FakerUtils.generateName;
+import static utils.FakerUtils.generateUrls;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class PetCreationTest {
 
-    private Long petId;
-    private final String petName = FakerUtils.generateName();
-    private final String[] petPhotoUrls = FakerUtils.generateUrls();
+    private static final int STATUS_CODE_200 = 200;
 
     @Test
     public void verifyPetCreation() {
+        String petName = generateName();
+        String[] petPhotoUrls = generateUrls();
+
         Pet pet = petBuilder(petName, petPhotoUrls);
         Response response = PetApi.post(pet);
-        final int STATUS_CODE_200 = 200;
         assertThat(response.statusCode(), equalTo(STATUS_CODE_200));
-        petId = response.as(Pet.class).getId();
-        Response getResponse = PetApi.get(petId);
-        assertThat(getResponse.statusCode(), equalTo(STATUS_CODE_200));
-        Pet createdPet = getResponse.as(Pet.class);
-        verifyPetWasCreated(createdPet);
+        Long petId = response.as(Pet.class).getId();
+
+        try{
+            Response getResponse = PetApi.get(petId);
+            assertThat(getResponse.statusCode(), equalTo(STATUS_CODE_200));
+            Pet createdPet = getResponse.as(Pet.class);
+            verifyCreatedPetAttributesMatchExpected(createdPet, petName, petPhotoUrls);
+        } finally {
+            PetApi.delete(petId);
+        }
+
     }
 
     public Pet petBuilder(String name, String[] photoUrls) {
@@ -35,14 +40,9 @@ public class PetCreationTest {
 
     }
 
-    public void verifyPetWasCreated(Pet createdPet) {
+    public void verifyCreatedPetAttributesMatchExpected(Pet createdPet, String petName, String[] petPhotoUrls) {
         assertThat(createdPet.getName(), equalTo(petName));
         assertThat(createdPet.getPhotoUrls(), equalTo(petPhotoUrls));
-    }
-
-    @AfterClass
-    public void deletePet() {
-        PetApi.delete(petId);
     }
 
 }
